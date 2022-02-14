@@ -11,6 +11,9 @@ mongoose.connect("mongodb://localhost/productDB");
 var fs = require('fs');
 var product = require("./model/product.js");
 var user = require("./model/user.js");
+var ad = require("./model/ad.js");
+
+const fastcsv = require("fast-csv");
 
 var dir = './uploads';
 var upload = multer({
@@ -367,6 +370,42 @@ app.get("/get-product", (req, res) => {
 
 });
 
+function initializeAdsFromCSV(){
+  // Check is DB is already initialized
+  ad.countDocuments({}, function (err, count) {
+    if (err){
+        console.log(err)
+    }else{
+        // Add to DB if Ad collection is empty
+        if (count == 0){
+          let stream = fs.createReadStream("../dataset/superbowl-ads.csv");
+          let row = 0;
+          let csvStream = fastcsv
+            .parse()
+            .on("data", function(data) {
+              row++;
+              if(row != 1){ // avoid adding header into DB
+                let new_ad = new ad();
+                new_ad.year = data[0];
+                new_ad.product_type = data[1];
+                new_ad.title = data[2];
+                new_ad.notes = data[3];
+                new_ad.id = 0; // assign cohortID later
+                new_ad.save((err, data) => {
+                  if (err) {
+                    console.log("err:"+err);
+                    console.log("error:"+JSON.stringify(new_ad));
+                  } 
+                });
+              }
+            })
+          stream.pipe(csvStream);
+        }
+    }
+  });  
+}
+
 app.listen(2000, () => {
   console.log("Server is Runing On port 2000");
+  initializeAdsFromCSV();
 });
