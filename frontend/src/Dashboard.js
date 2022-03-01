@@ -110,7 +110,7 @@ export default class Dashboard extends Component {
       this.setState({ fileName: e.target.files[0].name }, () => { });
     }
     this.setState({ [e.target.name]: e.target.value }, () => { });
-    if (e.target.name == 'search') {
+    if (e.target.name === 'search') {
       this.setState({ page: 1 }, () => {
         this.getProduct();
       });
@@ -322,7 +322,7 @@ export default class Dashboard extends Component {
               Cancel
             </Button>
             <Button
-              disabled={this.state.name == '' || this.state.desc == '' || this.state.discount == '' || this.state.price == ''}
+              disabled={this.state.name === '' || this.state.desc === '' || this.state.discount === '' || this.state.price === ''}
               onClick={(e) => this.updateProduct()} color="primary" autoFocus>
               Edit Product
             </Button>
@@ -386,9 +386,6 @@ export default class Dashboard extends Component {
                 id="standard-basic"
                 type="file"
                 accept="image/*"
-                // inputProps={{
-                //   accept: "image/*"
-                // }}
                 name="file"
                 value={this.state.file}
                 onChange={this.onChange}
@@ -406,7 +403,7 @@ export default class Dashboard extends Component {
               Cancel
             </Button>
             <Button
-              disabled={this.state.name == '' || this.state.desc == '' || this.state.discount == '' || this.state.price == '' || this.state.file == null}
+              disabled={this.state.name === '' || this.state.desc === '' || this.state.discount === '' || this.state.price === '' || this.state.file === null}
               onClick={(e) => this.addProduct()} color="primary" autoFocus>
               Add Product
             </Button>

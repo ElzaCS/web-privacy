@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import swal from 'sweetalert';
 import { Button, TextField, Link } from '@material-ui/core';
+var cohortVal = require('./helper/cohort');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 var salt = bcrypt.genSaltSync(10);
@@ -19,7 +20,7 @@ export default class Login extends React.Component {
   login = () => {
 
     const pwd = bcrypt.hashSync(this.state.password, salt);
-
+    
     axios.post('http://localhost:2000/login', {
       username: this.state.username,
       password: pwd,
@@ -73,7 +74,7 @@ export default class Login extends React.Component {
             variant="contained"
             color="primary"
             size="small"
-            disabled={this.state.username == '' && this.state.password == ''}
+            disabled={this.state.username === '' && this.state.password === ''}
             onClick={this.login}
           >
             Login
