@@ -3,22 +3,24 @@ const fastcsv = require("fast-csv");
 var fs = require('fs');
 
 function cohortValue(){
-    var tagsToCohort = [];
-    let stream = fs.createReadStream("../../public/RandomDB.csv");
-    let row = 0;
-    let csvStream = fastcsv
-      .parse()
-      .on("data", function(data) {
-        row++;
-        if(row !== 1){ 
-          let tag = data[4]
-          tagsToCohort.append(tag)
-        }
-      })
-    stream.pipe(csvStream);
+    fetch( './RandomDB.csv' )
+        .then( response => response.text() )
+        .then( responseText => {
+            var tagsToCohort = [];
 
-    console.log(simhash(tagsToCohort))
-    return simhash(tagsToCohort);
+            const lines = responseText.split('\n');
+            for(let i=0; i<lines.length; i++){
+              const values = lines[i].split(",");
+              let tag = values[4];
+              if (tag){
+                console.log("val:", tag)
+                tagsToCohort.push(tag)
+              }
+            }  
+            
+            console.log("simhash:", simhash(tagsToCohort))
+            return simhash(tagsToCohort);
+        })
 }
 
 module.exports = cohortValue();
