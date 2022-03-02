@@ -39,7 +39,8 @@ To run node server
 
 To run react frontend
 1. `cd frontend`
-2. `npm start`
+2. Enter Google API key in `getSearchResults()` in `frontend/src/Dashboard.js`
+3. `npm start`
 
 <!-- ### Login and Register screen
 [![login](https://github.com/FSojitra/Registration-Login-and-CRUD-Action-using-MERN-stack/blob/master/login.png)](https://github.com/FSojitra/Registration-Login-and-CRUD-Action-using-MERN-stack/blob/master/login.png)[![register](https://github.com/FSojitra/Registration-Login-and-CRUD-Action-using-MERN-stack/blob/master/register.png)](https://github.com/FSojitra/Registration-Login-and-CRUD-Action-using-MERN-stack/blob/master/register.png)

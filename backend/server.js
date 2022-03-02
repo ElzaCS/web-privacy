@@ -315,6 +315,40 @@ app.post("/delete-product", (req, res) => {
   }
 });
 
+/*Api to get all ad types*/
+app.get("/get-types", (req, res) => {
+  try {
+    adTypes = new Set();
+    adtypes = [];
+    ad.find({}, '-_id product_type')
+      .then((data) => {
+        for(let i = 0; i < data.length; i++){
+          adTypes.add(data[i].product_type)
+        }
+
+        // List all Values
+        for (const x of adTypes.values()) {
+          adtypes.push(x);
+        }
+        res.status(200).json({
+          status: true,
+          adTypes: adtypes
+        })
+      }).catch(err => {
+        res.status(400).json({
+          errorMessage: err.message || err,
+          status: false
+        });
+      });
+  } catch (e) {
+    res.status(400).json({
+      errorMessage: 'Something went wrong!',
+      status: false
+    });
+  }
+
+});
+
 /*Api to get and search product with pagination and search by name*/
 app.get("/get-product", (req, res) => {
   try {
