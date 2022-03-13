@@ -1,4 +1,4 @@
-var simhash = require('simhash')();
+var simhash = require('simhash')('md5');
 
 
 function cohortValue(){
