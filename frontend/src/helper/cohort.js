@@ -1,6 +1,5 @@
 var simhash = require('simhash')();
-const fastcsv = require("fast-csv"); 
-var fs = require('fs');
+
 
 function cohortValue(){
     fetch( './RandomDB.csv' )
