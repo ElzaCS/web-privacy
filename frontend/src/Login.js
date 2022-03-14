@@ -1,12 +1,12 @@
-import React, { Component } from 'react';
+import React from 'react';
 import swal from 'sweetalert';
 import { Button, TextField, Link } from '@material-ui/core';
-var cV = require('./helper/cohort');
+import { cohortValue } from './helper/cohort';
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 var salt = bcrypt.genSaltSync(10);
 
-console.log(cV)
+cohortValue()
 
 export default class Login extends React.Component {
   constructor(props) {
