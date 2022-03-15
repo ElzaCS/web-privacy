@@ -3,7 +3,10 @@ var Schema = mongoose.Schema;
 
 userSchema = new Schema( {
 	username: String,
-	password: String
+	verifier: String,
+	salt: String,
+	K: String,
+	b: String
 }),
 user = mongoose.model('user', userSchema);
 

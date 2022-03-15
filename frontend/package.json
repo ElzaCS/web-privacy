@@ -16,6 +16,7 @@
     "axios": "^0.21.0",
     "bcrypt": "^5.0.0",
     "bcryptjs": "^2.4.3",
+    "big-integer": "^1.6.51",
     "csv": "^6.0.5",
     "csv-parser": "^3.0.0",
     "dexie": "^4.0.0-alpha.1",

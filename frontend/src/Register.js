@@ -14,9 +14,7 @@ export default class Register extends React.Component {
   }
 
   onChange = (e) => this.setState({ [e.target.name]: e.target.value });
-
   register = () => {
-
     axios.post('http://localhost:2000/register', {
       username: this.state.username,
       password: this.state.password,

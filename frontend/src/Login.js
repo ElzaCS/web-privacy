@@ -6,6 +6,10 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 var salt = bcrypt.genSaltSync(10);
 
+const crypto = require('crypto');
+const parameters = require('./config').parameters;
+const bigInt = require("big-integer");
+
 cohortValue()
 
 export default class Login extends React.Component {
@@ -20,16 +24,79 @@ export default class Login extends React.Component {
   onChange = (e) => this.setState({ [e.target.name]: e.target.value });
 
   login = () => {
-
-    const pwd = bcrypt.hashSync(this.state.password, salt);
+    const password = this.state.password;
+    let a = bigInt("10");
+    let A = parameters.g.modPow(a, parameters.N);
     
     axios.post('http://localhost:2000/login', {
       username: this.state.username,
-      password: pwd,
+      A: A.toString(),
     }).then((res) => {
+      let B = bigInt(res.data.B);
+      let s = bigInt(res.data.salt);
+
+      let H = crypto.createHash('sha256');
+      H.update(A.toString() + B.toString());
+      let u = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      H = crypto.createHash('sha256');
+      H.update(password + s.toString());
+      let x = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      let exp = u.multiply(x).add(a)
+      let base = parameters.g.modPow(x, parameters.N).multiply(parameters.k);
+      let S = B.subtract(base).modPow(exp, parameters.N);
+
+      H = crypto.createHash('sha256');
+      H.update(S.toString());
+      let K = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      H = crypto.createHash('sha256');
+      H.update(parameters.N.toString());
+      let HN = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      H = crypto.createHash('sha256');
+      H.update(parameters.g.toString());
+      let Hg = bigInt(`${H.digest().toString('hex')}`, 16);
+    
+      H = crypto.createHash('sha256');
+      H.update(this.state.username);
+      let HI = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      H = crypto.createHash('sha256');
+      H.update(HN.xor(Hg).toString() + HI.toString() + s.toString() + A.toString() + B.toString() + K.toString());
+      let M = bigInt(`${H.digest().toString('hex')}`, 16);
+
+      axios.post('http://localhost:2000/authenticate', {
+      username: this.state.username,
+        A: A.toString(),
+        M: M.toString(),
+    }).then((res) => {
+        let M2 = res.data.M;
+
+        H = crypto.createHash('sha256');
+        H.update(A.toString() + M.toString() + K.toString());
+        let check = bigInt(`${H.digest().toString('hex')}`, 16);
+
+        if(check.compare(M2) === 0){
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user_id', res.data.id);
       this.props.history.push('/dashboard');
+        } else {
+          swal({
+            icon: "error",
+            type: "error"
+          });
+        }
+      }).catch((err) => {
+        if (err.response && err.response.data && err.response.data.errorMessage) {
+          swal({
+            text: err.response.data.errorMessage,
+            icon: "error",
+            type: "error"
+          });
+        }
+      });
     }).catch((err) => {
       if (err.response && err.response.data && err.response.data.errorMessage) {
         swal({

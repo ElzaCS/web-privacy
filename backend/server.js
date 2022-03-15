@@ -7,11 +7,15 @@ var multer = require('multer'),
   bodyParser = require('body-parser'),
   path = require('path');
 var mongoose = require("mongoose");
-mongoose.connect("mongodb://localhost/productDB");
+mongoose.connect("mongodb://127.0.0.1/loginDB");
 var fs = require('fs');
 var product = require("./model/product.js");
 var user = require("./model/user.js");
 var ad = require("./model/ad.js");
+
+const crypto = require('crypto');
+const parameters = require('./config').parameters;
+const bigInt = require("big-integer");
 
 const fastcsv = require("fast-csv");
 
@@ -46,7 +50,7 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 
 app.use("/", (req, res, next) => {
   try {
-    if (req.path == "/login" || req.path == "/register" || req.path == "/") {
+    if (req.path == "/login" || req.path == '/authenticate' || req.path == "/register" || req.path == "/") {
       next();
     } else {
       /* decode jwt token if authorized*/
@@ -80,55 +84,153 @@ app.get("/", (req, res) => {
 /* login api */
 app.post("/login", (req, res) => {
   try {
-    if (req.body && req.body.username && req.body.password) {
-      user.find({ username: req.body.username }, (err, data) => {
-        if (data.length > 0) {
+    if (req.body && req.body.username && req.body.A) {
+      user.findOne({ username: req.body.username }, (err, data) => {
+        if (data) {
+          let A = req.body.A;
+          let v = bigInt(data.verifier);
 
-          if (bcrypt.compareSync(data[0].password, req.body.password)) {
-            checkUserAndGenerateToken(data[0], req, res);
-          } else {
+          let b = bigInt("7");
+          let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
+          
+          let H = crypto.createHash('sha256');
+          H.update(A.toString() + B.toString());
 
-            res.status(400).json({
-              errorMessage: 'Username or password is incorrect!',
-              status: false
-            });
-          }
+          let u = bigInt(`${H.digest().toString('hex')}`, 16);;
 
+          let S = v.modPow(u, parameters.N).multiply(A).modPow(b, parameters.N)
+
+          H = crypto.createHash('sha256');
+          H.update(S.toString());
+          let K = bigInt(`${H.digest().toString('hex')}`, 16);
+
+          data.K = K;
+          data.b = b;
+          data.save((err, data) => {
+            if (err) {
+              res.status(400).json({
+                errorMessage: err,
+                status: false
+              });
+            } else {
+              res.status(200).json({
+                salt: data.salt,
+                B: B.toString(),
+                status: true
+              });
+            }
+          });
         } else {
           res.status(400).json({
-            errorMessage: 'Username or password is incorrect!',
+            errorMessage: 'Username is incorrect.',
             status: false
           });
         }
       })
     } else {
       res.status(400).json({
-        errorMessage: 'Add proper parameter first!',
+        errorMessage: 'Add proper parameters.',
         status: false
       });
     }
   } catch (e) {
     res.status(400).json({
-      errorMessage: 'Something went wrong!',
+      errorMessage: 'Something went wrong.',
       status: false
     });
   }
+});
 
+app.post("/authenticate", (req, res) => {
+  try {
+    if (req.body && req.body.username && req.body.A && req.body.M) {
+      user.findOne({ username: req.body.username }, (err, data) => {
+        if (data) {
+          let A = req.body.A;
+          let M = bigInt(req.body.M);
+          let v = bigInt(data.verifier);
+
+          let b = data.b;
+          let s = data.salt;
+          let K = data.K;
+          let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
+
+          let H = crypto.createHash('sha256');
+          H.update(parameters.N.toString());
+          let HN = bigInt(`${H.digest().toString('hex')}`, 16);
+
+          H = crypto.createHash('sha256');
+          H.update(parameters.g.toString());
+          let Hg = bigInt(`${H.digest().toString('hex')}`, 16);
+
+          H = crypto.createHash('sha256');
+          H.update(req.body.username);
+          let HI = bigInt(`${H.digest().toString('hex')}`, 16);
+          
+          H = crypto.createHash('sha256');
+          H.update(HN.xor(Hg).toString() + HI.toString() + s + A + B.toString() + K);
+          let check = bigInt(`${H.digest().toString('hex')}`, 16);
+
+          if(check.compare(M) == 0){
+            H = crypto.createHash('sha256');
+            H.update(A + M.toString() + K);
+            let M2 = bigInt(`${H.digest().toString('hex')}`, 16);
+
+            res.status(200).json({
+              title: 'Authentication succeeded.',
+              M: M2.toString(),
+              status: true
+            });
+          } else {
+            res.status(400).json({
+              errorMessage: 'Authentication failed.',
+              M: check,
+              status: false
+            });
+          }
+        } else {
+          res.status(400).json({
+            errorMessage: 'Username is not found.',
+            status: false
+          });
+        }
+      })
+    } else {
+      res.status(400).json({
+        errorMessage: 'Add proper parameters.',
+        status: false
+      });
+    }
+  } catch (e) {
+    res.status(400).json({
+      errorMessage: 'Something went wrong.',
+      status: false
+    });
+  }
 });
 
 /* register api */
 app.post("/register", (req, res) => {
   try {
     if (req.body && req.body.username && req.body.password) {
-
       user.find({ username: req.body.username }, (err, data) => {
-
         if (data.length == 0) {
+          let password = req.body.password;
+
+          let saltBytes = crypto.randomBytes(64)
+          let salt = bigInt(`${saltBytes.toString('hex')}`, 16);
+
+          let H = crypto.createHash('sha256');
+          H.update(password + salt.toString());
+          let x = bigInt(`${H.digest().toString('hex')}`, 16);
+          let v = parameters.g.modPow(x, parameters.N);
 
           let User = new user({
             username: req.body.username,
-            password: req.body.password
+            salt: salt.toString(),
+            verifier: v.toString()
           });
+
           User.save((err, data) => {
             if (err) {
               res.status(400).json({
@@ -138,14 +240,14 @@ app.post("/register", (req, res) => {
             } else {
               res.status(200).json({
                 status: true,
-                title: 'Registered Successfully.'
+                title: 'Registered successfully.'
               });
             }
           });
 
         } else {
           res.status(400).json({
-            errorMessage: `UserName ${req.body.username} Already Exist!`,
+            errorMessage: `Username ${req.body.username} already exists.`,
             status: false
           });
         }
@@ -154,13 +256,13 @@ app.post("/register", (req, res) => {
 
     } else {
       res.status(400).json({
-        errorMessage: 'Add proper parameter first!',
+        errorMessage: 'Add proper parameters.',
         status: false
       });
     }
   } catch (e) {
     res.status(400).json({
-      errorMessage: 'Something went wrong!',
+      errorMessage: 'Something went wrong.',
       status: false
     });
   }
