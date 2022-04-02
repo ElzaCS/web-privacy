@@ -69,7 +69,7 @@ export default class Dashboard extends Component {
       this.setState({ loading: false, adTypes: res.data.adTypes, pages: res.data.pages });
     }).catch((err) => {
       swal({
-        text: "err.response.data.errorMessage",
+        text: err.response.data.errorMessage,
         icon: "error",
         type: "error"
       });
@@ -147,8 +147,8 @@ export default class Dashboard extends Component {
                             <ListItemText key={item.snippet+Math.random()}
                               primary={(item.title.split("-").length > 1) ? item.title.split("-")[1] : item.title.split("-")[0]}
                               secondary={
-                                <React.Fragment key={item.link}>
-                                  <Link to={item.link}><Typography key={item.link} sx={{ display: 'inline' }} component="span" variant="body2" color="text.primary" >{item.link}</Typography></Link>
+                                <React.Fragment key={item.link+Math.random()}>
+                                  <Link to={item.link}><Typography key={item.link+Math.random()} sx={{ display: 'inline' }} component="span" variant="body2" color="text.primary" >{item.link}</Typography></Link>
                                   <br />{item.snippet}
                                 </React.Fragment>
                               }

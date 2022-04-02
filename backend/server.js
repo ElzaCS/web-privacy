@@ -50,22 +50,23 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 
 app.use("/", (req, res, next) => {
   try {
-    if (req.path == "/login" || req.path == '/authenticate' || req.path == "/register" || req.path == "/") {
-      next();
-    } else {
-      /* decode jwt token if authorized*/
-      jwt.verify(req.headers.token, 'shhhhh11111', function (err, decoded) {
-        if (decoded && decoded.user) {
-          req.user = decoded;
-          next();
-        } else {
-          return res.status(401).json({
-            errorMessage: 'User unauthorized!',
-            status: false
-          });
-        }
-      })
-    }
+    next();
+    // if (req.path == "/login" || req.path == '/authenticate' || req.path == "/register" || req.path == "/") {
+    //   next();
+    // } else {
+    //   /* decode jwt token if authorized*/
+    //   jwt.verify(req.headers.token, 'shhhhh11111', function (err, decoded) {
+    //     if (decoded && decoded.user) {
+    //       req.user = decoded;
+    //       next();
+    //     } else {
+    //       return res.status(401).json({
+    //         errorMessage: 'User unauthorized!',
+    //         status: false
+    //       });
+    //     }
+    //   })
+    // }
   } catch (e) {
     res.status(400).json({
       errorMessage: 'Something went wrong!',
@@ -90,14 +91,18 @@ app.post("/login", (req, res) => {
           let A = req.body.A;
           let v = bigInt(data.verifier);
 
-          let b = bigInt("7");
+          //random b
+          let b = bigInt("7"); 
+           // B = g^b mod N + kv mod N
           let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
           
           let H = crypto.createHash('sha256');
           H.update(A.toString() + B.toString());
 
+           // u = hash(A + B)
           let u = bigInt(`${H.digest().toString('hex')}`, 16);;
 
+           // S = v^u mod N * A^b mod N
           let S = v.modPow(u, parameters.N).multiply(A).modPow(b, parameters.N)
 
           H = crypto.createHash('sha256');
@@ -153,6 +158,7 @@ app.post("/authenticate", (req, res) => {
           let b = data.b;
           let s = data.salt;
           let K = data.K;
+           // B = g*b mod N + k.v mod N
           let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
 
           let H = crypto.createHash('sha256');
@@ -169,12 +175,12 @@ app.post("/authenticate", (req, res) => {
           
           H = crypto.createHash('sha256');
           H.update(HN.xor(Hg).toString() + HI.toString() + s + A + B.toString() + K);
-          let check = bigInt(`${H.digest().toString('hex')}`, 16);
+          let check = bigInt(`${H.digest().toString('hex')}`, 16); // check = hash( XOR(HN,Hg) + HI + s + A + B + K)
 
           if(check.compare(M) == 0){
             H = crypto.createHash('sha256');
             H.update(A + M.toString() + K);
-            let M2 = bigInt(`${H.digest().toString('hex')}`, 16);
+            let M2 = bigInt(`${H.digest().toString('hex')}`, 16); // M2 = hash(A + M + K)
 
             res.status(200).json({
               title: 'Authentication succeeded.',
@@ -212,23 +218,13 @@ app.post("/authenticate", (req, res) => {
 /* register api */
 app.post("/register", (req, res) => {
   try {
-    if (req.body && req.body.username && req.body.password) {
+    if (req.body && req.body.username && req.body.salt && req.body.verifier) {
       user.find({ username: req.body.username }, (err, data) => {
         if (data.length == 0) {
-          let password = req.body.password;
-
-          let saltBytes = crypto.randomBytes(64)
-          let salt = bigInt(`${saltBytes.toString('hex')}`, 16);
-
-          let H = crypto.createHash('sha256');
-          H.update(password + salt.toString());
-          let x = bigInt(`${H.digest().toString('hex')}`, 16);
-          let v = parameters.g.modPow(x, parameters.N);
-
           let User = new user({
             username: req.body.username,
-            salt: salt.toString(),
-            verifier: v.toString()
+            salt: req.body.salt,
+            verifier: req.body.verifier
           });
 
           User.save((err, data) => {

@@ -1,7 +1,10 @@
 import React from 'react';
 import swal from 'sweetalert';
 import { Button, TextField, Link } from '@material-ui/core';
+const crypto = require('crypto');
 const axios = require('axios');
+const bigInt = require("big-integer");
+const parameters = require('./config').parameters;
 
 export default class Register extends React.Component {
   constructor(props) {
@@ -15,9 +18,23 @@ export default class Register extends React.Component {
 
   onChange = (e) => this.setState({ [e.target.name]: e.target.value });
   register = () => {
+    // random salt
+    let saltBytes = crypto.randomBytes(64) 
+    let salt = bigInt(`${saltBytes.toString('hex')}`, 16);
+
+    // create x = hash(pwd + salt)
+    let H = crypto.createHash('sha256'); 
+    H.update(this.state.password + salt.toString());
+    let x = bigInt(`${H.digest().toString('hex')}`, 16);
+
+    // create verifier v = g^x
+    let v = parameters.g.modPow(x, parameters.N);
+    console.log("f: username=", this.state.username, ", s=", salt.toString, ", v=", v.toString)
+
     axios.post('http://localhost:2000/register', {
       username: this.state.username,
-      password: this.state.password,
+      salt: salt.toString(),
+      verifier: v.toString(),
     }).then((res) => {
       swal({
         text: res.data.title,

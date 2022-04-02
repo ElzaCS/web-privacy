@@ -3,8 +3,8 @@ import swal from 'sweetalert';
 import { Button, TextField, Link } from '@material-ui/core';
 import { cohortValue } from './helper/cohort';
 const axios = require('axios');
-const bcrypt = require('bcryptjs');
-var salt = bcrypt.genSaltSync(10);
+// const bcrypt = require('bcryptjs');
+// var salt = bcrypt.genSaltSync(10);
 
 const crypto = require('crypto');
 const parameters = require('./config').parameters;
@@ -25,8 +25,8 @@ export default class Login extends React.Component {
 
   login = () => {
     const password = this.state.password;
-    let a = bigInt("10");
-    let A = parameters.g.modPow(a, parameters.N);
+    let a = bigInt("10"); // random a
+    let A = parameters.g.modPow(a, parameters.N); // A = g^a mod N
     
     axios.post('http://localhost:2000/login', {
       username: this.state.username,
@@ -37,15 +37,15 @@ export default class Login extends React.Component {
 
       let H = crypto.createHash('sha256');
       H.update(A.toString() + B.toString());
-      let u = bigInt(`${H.digest().toString('hex')}`, 16);
+      let u = bigInt(`${H.digest().toString('hex')}`, 16); // u = hash(A + B)
 
       H = crypto.createHash('sha256');
       H.update(password + s.toString());
-      let x = bigInt(`${H.digest().toString('hex')}`, 16);
+      let x = bigInt(`${H.digest().toString('hex')}`, 16); // x = hash(pwd + salt)
 
-      let exp = u.multiply(x).add(a)
-      let base = parameters.g.modPow(x, parameters.N).multiply(parameters.k);
-      let S = B.subtract(base).modPow(exp, parameters.N);
+      let exp = u.multiply(x).add(a) // exp = u.x + a
+      let base = parameters.g.modPow(x, parameters.N).multiply(parameters.k); // base = g^x mod N * k
+      let S = B.subtract(base).modPow(exp, parameters.N); // S = B - base*exp mod N
 
       H = crypto.createHash('sha256');
       H.update(S.toString());
@@ -65,8 +65,8 @@ export default class Login extends React.Component {
 
       H = crypto.createHash('sha256');
       H.update(HN.xor(Hg).toString() + HI.toString() + s.toString() + A.toString() + B.toString() + K.toString());
-      let M = bigInt(`${H.digest().toString('hex')}`, 16);
-
+      let M = bigInt(`${H.digest().toString('hex')}`, 16); // M = hash( XOR(HN,Hg) + HI + S + A + B + K)
+      
       axios.post('http://localhost:2000/authenticate', {
       username: this.state.username,
         A: A.toString(),
