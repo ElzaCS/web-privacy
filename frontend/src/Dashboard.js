@@ -5,8 +5,11 @@ import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import swal from 'sweetalert';
 import { updateCohortValue } from './helper/cohort';
+import axios from 'axios';
 
-const axios = require('axios');
+const crypto = require('crypto');
+const parameters = require('./config').parameters;
+const bigInt = require("big-integer");
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -55,6 +58,7 @@ export default class Dashboard extends Component {
     } else {
       this.setState({ token: token }, () => {
         this.getAdTypes();
+        this.getAds();
       });
     }
   }
@@ -74,6 +78,43 @@ export default class Dashboard extends Component {
         type: "error"
       });
       this.setState({ loading: false, products: [], pages: 0 },()=>{});
+    });
+  }
+
+  getAds = () => {
+    // TODO: Set adChoice based on Simhash
+    let adChoice = 0;
+
+    axios.post('http://localhost:2000/get-ad-commitments', {}).then((res) => {
+      let x = bigInt(res.data.x[adChoice]);
+
+      let randomValue = crypto.randomBytes(64);
+      let k = bigInt(`${randomValue.toString('hex')}`, 16);
+
+      let v = k.modPow(parameters.OT.e, parameters.OT.N).add(x).mod(parameters.OT.N);
+
+      axios.post('http://localhost:2000/get-ads', {
+        v: v.toString(),
+        x: res.data.x
+      }).then((res) => {
+        let m = bigInt(res.data.m[adChoice]).subtract(k).toString(16);
+        let message = JSON.parse(Buffer.from(m, 'hex').toString());
+        console.log(message);
+      }).catch((err) => {
+        console.log(err)
+        swal({
+          text: "Something went wrong.",
+          icon: "error",
+          type: "error"
+        });
+      });
+    }).catch((err) => {
+      console.log(err)
+      swal({
+        text: "Something went wrong.",
+        icon: "error",
+        type: "error"
+      });
     });
   }
 

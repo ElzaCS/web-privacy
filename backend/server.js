@@ -91,10 +91,8 @@ app.post("/login", (req, res) => {
           let A = req.body.A;
           let v = bigInt(data.verifier);
 
-          //random b
-          let b = bigInt("7"); 
-           // B = g^b mod N + kv mod N
-          let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
+          let b = bigInt("7"); //random b
+          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.N); // B = g^b mod N + kv mod N
           
           let H = crypto.createHash('sha256');
           H.update(A.toString() + B.toString());
@@ -102,8 +100,7 @@ app.post("/login", (req, res) => {
            // u = hash(A + B)
           let u = bigInt(`${H.digest().toString('hex')}`, 16);;
 
-           // S = v^u mod N * A^b mod N
-          let S = v.modPow(u, parameters.N).multiply(A).modPow(b, parameters.N)
+          let S = v.modPow(u, parameters.SRP.N).multiply(A).modPow(b, parameters.SRP.N) // S = v^u mod N * A^b mod N
 
           H = crypto.createHash('sha256');
           H.update(S.toString());
@@ -158,15 +155,14 @@ app.post("/authenticate", (req, res) => {
           let b = data.b;
           let s = data.salt;
           let K = data.K;
-           // B = g*b mod N + k.v mod N
-          let B = parameters.g.modPow(b, parameters.N).add(parameters.k.multiply(v)).mod(parameters.N);
+          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.N); // B = g*b mod N + k.v mod N
 
           let H = crypto.createHash('sha256');
-          H.update(parameters.N.toString());
+          H.update(parameters.SRP.N.toString());
           let HN = bigInt(`${H.digest().toString('hex')}`, 16);
 
           H = crypto.createHash('sha256');
-          H.update(parameters.g.toString());
+          H.update(parameters.SRP.g.toString());
           let Hg = bigInt(`${H.digest().toString('hex')}`, 16);
 
           H = crypto.createHash('sha256');
@@ -256,6 +252,74 @@ app.post("/register", (req, res) => {
         status: false
       });
     }
+  } catch (e) {
+    res.status(400).json({
+      errorMessage: 'Something went wrong.',
+      status: false
+    });
+  }
+});
+
+app.post("/get-ad-commitments", (req, res) => {
+  try {
+    ad.distinct('product_type', (err, data) => {
+      let length = data.length;
+      let x = [];
+      for(let i = 0; i < length; i++) {
+        let randomValue = crypto.randomBytes(64);
+        x.push(bigInt(`${randomValue.toString('hex')}`, 16).toString());
+      }
+
+      res.status(200).json({
+        status: true,
+        x: x
+      });
+      
+    });
+
+  } catch (e) {
+    res.status(400).json({
+      errorMessage: 'Something went wrong.',
+      status: false
+    });
+  }
+});
+
+app.post("/get-ads", (req, res) => {
+  try {
+    ad.aggregate([
+      {
+        $group: {
+          _id: "$product_type",
+          obj: { $push: {year: "$year", title: "$title", notes: "$notes"}}
+        }
+      }
+    ], (err, data) => {
+      let adData = [];
+      for(let i = 0; i < data.length; i++) {
+        adData.push(Buffer.from(JSON.stringify(data[i].obj)).toString('hex'));
+      }
+
+      let length = adData.length;
+
+      let v = bigInt(req.body.v);
+      let x = [];
+      for(let i = 0; i < req.body.x.length; i++) {
+        x.push(bigInt(req.body.x[i]));
+      }
+
+      let m = [];
+      for(let i = 0; i < length; i++) {
+        let k = v.subtract(bigInt(x[i])).modPow(parameters.OT.d, parameters.OT.N);
+        m.push(bigInt(adData[i], 16).add(k).toString());
+      }
+
+      res.status(200).json({
+        status: true,
+        m: m
+      });
+    });
+
   } catch (e) {
     res.status(400).json({
       errorMessage: 'Something went wrong.',

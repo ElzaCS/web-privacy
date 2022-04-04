@@ -26,7 +26,7 @@ export default class Login extends React.Component {
   login = () => {
     const password = this.state.password;
     let a = bigInt("10"); // random a
-    let A = parameters.g.modPow(a, parameters.N); // A = g^a mod N
+    let A = parameters.SRP.g.modPow(a, parameters.SRP.N); // A = g^a mod N
     
     axios.post('http://localhost:2000/login', {
       username: this.state.username,
@@ -43,20 +43,20 @@ export default class Login extends React.Component {
       H.update(password + s.toString());
       let x = bigInt(`${H.digest().toString('hex')}`, 16); // x = hash(pwd + salt)
 
-      let exp = u.multiply(x).add(a) // exp = u.x + a
-      let base = parameters.g.modPow(x, parameters.N).multiply(parameters.k); // base = g^x mod N * k
-      let S = B.subtract(base).modPow(exp, parameters.N); // S = B - base*exp mod N
+      let exp = u.multiply(x).add(a); // exp = u.x + a
+      let base = parameters.SRP.g.modPow(x, parameters.SRP.N).multiply(parameters.SRP.k); // base = g^x mod N * k
+      let S = B.subtract(base).modPow(exp, parameters.SRP.N); // S = B - base*exp mod N
 
       H = crypto.createHash('sha256');
       H.update(S.toString());
       let K = bigInt(`${H.digest().toString('hex')}`, 16);
 
       H = crypto.createHash('sha256');
-      H.update(parameters.N.toString());
+      H.update(parameters.SRP.N.toString());
       let HN = bigInt(`${H.digest().toString('hex')}`, 16);
 
       H = crypto.createHash('sha256');
-      H.update(parameters.g.toString());
+      H.update(parameters.SRP.g.toString());
       let Hg = bigInt(`${H.digest().toString('hex')}`, 16);
     
       H = crypto.createHash('sha256');
