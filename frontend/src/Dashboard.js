@@ -79,7 +79,7 @@ export default class Dashboard extends Component {
 
   getSearchResults = () => {
     this.setState({ loading: true });
-    let API_KEY = "[ENTER YOUR API KEY]";
+    let API_KEY = "AIzaSyB3CG76HG9E63Z2SPwWag8UmRWGd9QVWw4";
     let CX = "b2db8f1415b4d3975";
     let srcResults = [
       {title: "123 - Search Result1 - Google", link: "www.googlelink1.com", snippet: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "}, 
@@ -142,8 +142,8 @@ export default class Dashboard extends Component {
                 <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
                   { this.state.searchResults.map((item) => 
                       <>
-                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} href={item.link} key={item.link+Math.random()} onClick={() => updateCohortValue(item)}>
-                          <ListItem alignItems="flex-start" key={item.title}>
+                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} href={item.link} key={item.link+Math.random()} onClick={updateCohortValue(item)}>
+                          <ListItem alignItems="flx-start" key={item.title}>
                             <ListItemText key={item.snippet+Math.random()}
                               primary={(item.title.split("-").length > 1) ? item.title.split("-")[1] : item.title.split("-")[0]}
                               secondary={

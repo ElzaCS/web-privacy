@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 var simhash = require('simhash')('md5');
-
+let val ;
 /* connect to indexedDB */
 const db = new Dexie('user_history');
 db.version(1).stores(
@@ -51,7 +51,8 @@ async function cohortValue(){
     // console.log("initialized data:", finaldata)
 
     console.log("simhash:", JSON.stringify(cohortID))
-    return cohortID;
+    val = cohortID;
+    return val;
 }
 
 
@@ -62,8 +63,9 @@ async function cohortValue(){
  * Returns new cohortID
 */
 async function updateCohortValue(searchData){
+    //console.log("searchData :", searchData);
     let newSearches;
-
+    console.log("Updaying cohort value")
     /* add new searches to searchHistory in indexedDB */
     if (searchData.tag.length === 1){
       newSearches = { name: searchData.title, desc: searchData.snippet, tag: searchData.tag[0] }
@@ -85,8 +87,10 @@ async function updateCohortValue(searchData){
 
     /* get all tags to update cohortID */
     const allTags = await db.history_store.orderBy('tag').keys();  
-    // console.log(allTags)
-    console.log("updated simhash:", simhash(allTags))
+    console.log("Alltags:" , allTags.length)
+    //if(val !== simhash(allTags)){
+    console.log("updated simhash:", JSON.stringify(simhash(allTags)))
+    //}
     return simhash(allTags); 
 }
 
