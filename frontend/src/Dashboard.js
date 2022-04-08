@@ -5,6 +5,7 @@ import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import swal from 'sweetalert';
 import { updateCohortValue } from './helper/cohort';
+import { globalCohort } from './helper/global';
 import axios from 'axios';
 
 const crypto = require('crypto');
@@ -183,7 +184,7 @@ export default class Dashboard extends Component {
                 <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
                   { this.state.searchResults.map((item) => 
                       <>
-                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} href={item.link} key={item.link+Math.random()} onClick={ updateCohortValue(item)}>
+                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} href={item.link} key={item.link+Math.random()} onClick={updateCohortValue(item)}>
                           <ListItem alignItems="flx-start" key={item.title}>
                             <ListItemText key={item.snippet+Math.random()}
                               primary={(item.title.split("-").length > 1) ? item.title.split("-")[1] : item.title.split("-")[0]}

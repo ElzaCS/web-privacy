@@ -1,0 +1,3 @@
+var globalCohort = {};
+export {globalCohort}
+  
