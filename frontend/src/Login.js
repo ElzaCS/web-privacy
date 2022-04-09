@@ -1,7 +1,6 @@
 import React from 'react';
 import swal from 'sweetalert';
 import { Button, TextField, Link } from '@material-ui/core';
-import { cohortValue } from './helper/cohort';
 const axios = require('axios');
 // const bcrypt = require('bcryptjs');
 // var salt = bcrypt.genSaltSync(10);
@@ -9,8 +8,6 @@ const axios = require('axios');
 const crypto = require('crypto');
 const parameters = require('./config').parameters;
 const bigInt = require("big-integer");
-
-cohortValue()
 
 export default class Login extends React.Component {
   constructor(props) {

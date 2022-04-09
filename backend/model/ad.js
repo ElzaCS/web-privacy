@@ -3,10 +3,12 @@ var Schema = mongoose.Schema;
 
 adSchema = new Schema( {
 	year: Number,
-	product_type: String,
+	product_type: {
+		name: String,
+		id: String
+	},
 	title: String,
 	notes: String,
-	id: Number
 }),
 ad = mongoose.model('ad', adSchema);
 

@@ -18,6 +18,7 @@ const parameters = require('./config').parameters;
 const bigInt = require("big-integer");
 
 const fastcsv = require("fast-csv");
+const { assignCohortValues } = require("./helpers/cohort.js");
 
 var dir = './uploads';
 var upload = multer({
@@ -270,9 +271,12 @@ app.post("/get-ad-commitments", (req, res) => {
         x.push(bigInt(`${randomValue.toString('hex')}`, 16).toString());
       }
 
+      let adHash = data.map((x) => x.id);
+
       res.status(200).json({
         status: true,
-        x: x
+        x: x,
+        adHash: adHash
       });
       
     });
@@ -290,9 +294,12 @@ app.post("/get-ads", (req, res) => {
     ad.aggregate([
       {
         $group: {
-          _id: "$product_type",
+          _id: "$product_type.name",
           obj: { $push: {year: "$year", title: "$title", notes: "$notes"}}
         }
+      },
+      {
+        $sort: { _id: 1 }
       }
     ], (err, data) => {
       let adData = [];
@@ -345,212 +352,20 @@ function checkUserAndGenerateToken(data, req, res) {
   });
 }
 
-/* Api to add Product */
-app.post("/add-product", upload.any(), (req, res) => {
-  try {
-    if (req.files && req.body && req.body.name && req.body.desc && req.body.price &&
-      req.body.discount) {
-
-      let new_product = new product();
-      new_product.name = req.body.name;
-      new_product.desc = req.body.desc;
-      new_product.price = req.body.price;
-      new_product.image = req.files[0].filename;
-      new_product.discount = req.body.discount;
-      new_product.user_id = req.user.id;
-      new_product.save((err, data) => {
-        if (err) {
-          res.status(400).json({
-            errorMessage: err,
-            status: false
-          });
-        } else {
-          res.status(200).json({
-            status: true,
-            title: 'Product Added successfully.'
-          });
-        }
-      });
-
-    } else {
-      res.status(400).json({
-        errorMessage: 'Add proper parameter first!',
-        status: false
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: 'Something went wrong!',
-      status: false
-    });
-  }
-});
-
-/* Api to update Product */
-app.post("/update-product", upload.any(), (req, res) => {
-  try {
-    if (req.files && req.body && req.body.name && req.body.desc && req.body.price &&
-      req.body.id && req.body.discount) {
-
-      product.findById(req.body.id, (err, new_product) => {
-
-        // if file already exist than remove it
-        if (req.files && req.files[0] && req.files[0].filename && new_product.image) {
-          var path = `./uploads/${new_product.image}`;
-          fs.unlinkSync(path);
-        }
-
-        if (req.files && req.files[0] && req.files[0].filename) {
-          new_product.image = req.files[0].filename;
-        }
-        if (req.body.name) {
-          new_product.name = req.body.name;
-        }
-        if (req.body.desc) {
-          new_product.desc = req.body.desc;
-        }
-        if (req.body.price) {
-          new_product.price = req.body.price;
-        }
-        if (req.body.discount) {
-          new_product.discount = req.body.discount;
-        }
-
-        new_product.save((err, data) => {
-          if (err) {
-            res.status(400).json({
-              errorMessage: err,
-              status: false
-            });
-          } else {
-            res.status(200).json({
-              status: true,
-              title: 'Product updated.'
-            });
-          }
-        });
-
-      });
-
-    } else {
-      res.status(400).json({
-        errorMessage: 'Add proper parameter first!',
-        status: false
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: 'Something went wrong!',
-      status: false
-    });
-  }
-});
-
-/* Api to delete Product */
-app.post("/delete-product", (req, res) => {
-  try {
-    if (req.body && req.body.id) {
-      product.findByIdAndUpdate(req.body.id, { is_delete: true }, { new: true }, (err, data) => {
-        if (data.is_delete) {
-          res.status(200).json({
-            status: true,
-            title: 'Product deleted.'
-          });
-        } else {
-          res.status(400).json({
-            errorMessage: err,
-            status: false
-          });
-        }
-      });
-    } else {
-      res.status(400).json({
-        errorMessage: 'Add proper parameter first!',
-        status: false
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: 'Something went wrong!',
-      status: false
-    });
-  }
-});
-
 /*Api to get all ad types*/
 app.get("/get-types", (req, res) => {
   try {
-    adTypes = new Set();
     adtypes = [];
-    ad.find({}, '-_id product_type')
+    ad.distinct('product_type')
       .then((data) => {
         for(let i = 0; i < data.length; i++){
-          adTypes.add(data[i].product_type)
+          adtypes.push(data[i].name)
         }
 
-        // List all Values
-        for (const x of adTypes.values()) {
-          adtypes.push(x);
-        }
         res.status(200).json({
           status: true,
           adTypes: adtypes
         })
-      }).catch(err => {
-        res.status(400).json({
-          errorMessage: err.message || err,
-          status: false
-        });
-      });
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: 'Something went wrong!',
-      status: false
-    });
-  }
-
-});
-
-/*Api to get and search product with pagination and search by name*/
-app.get("/get-product", (req, res) => {
-  try {
-    var query = {};
-    query["$and"] = [];
-    query["$and"].push({
-      is_delete: false,
-      user_id: req.user.id
-    });
-    if (req.query && req.query.search) {
-      query["$and"].push({
-        name: { $regex: req.query.search }
-      });
-    }
-    var perPage = 5;
-    var page = req.query.page || 1;
-    product.find(query, { date: 1, name: 1, id: 1, desc: 1, price: 1, discount: 1, image: 1 })
-      .skip((perPage * page) - perPage).limit(perPage)
-      .then((data) => {
-        product.find(query).count()
-          .then((count) => {
-
-            if (data && data.length > 0) {
-              res.status(200).json({
-                status: true,
-                title: 'Product retrived.',
-                products: data,
-                current_page: page,
-                total: count,
-                pages: Math.ceil(count / perPage),
-              });
-            } else {
-              res.status(400).json({
-                errorMessage: 'There is no product!',
-                status: false
-              });
-            }
-
-          });
-
       }).catch(err => {
         res.status(400).json({
           errorMessage: err.message || err,
@@ -583,10 +398,11 @@ function initializeAdsFromCSV(){
               if(row != 1){ // avoid adding header into DB
                 let new_ad = new ad();
                 new_ad.year = data[0];
-                new_ad.product_type = data[1];
+                new_ad.product_type = {};
+                new_ad.product_type.name = data[1];
                 new_ad.title = data[2];
                 new_ad.notes = data[3];
-                new_ad.id = 0; // assign cohortID later
+                new_ad.product_type.id = JSON.stringify(assignCohortValues(data[1])); 
                 new_ad.save((err, data) => {
                   if (err) {
                     console.log("err:"+err);

@@ -1,3 +1,0 @@
-var globalCohort = [];
-export {globalCohort}
-  

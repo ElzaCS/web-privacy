@@ -4,8 +4,7 @@ import { Autocomplete, Container, Stack, Paper, Divider, List, ListItem, ListIte
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
 import swal from 'sweetalert';
-import { updateCohortValue } from './helper/cohort';
-import { globalCohort } from './helper/global';
+import { cohortValue, updateCohortValue, dot } from './helper/cohort';
 import axios from 'axios';
 
 const crypto = require('crypto');
@@ -43,6 +42,7 @@ export default class Dashboard extends Component {
       loading: false,
       searchDisplay: false,
       searchResults: [],
+      cohort: [],
       csvData: [
         ["firstname", "lastname", "email"],
         ["Ahmed", "Tomi", "ah@smthing.co.com"],
@@ -57,9 +57,11 @@ export default class Dashboard extends Component {
     if (!token) {
       this.props.history.push('/login');
     } else {
-      this.setState({ token: token }, () => {
-        this.getAdTypes();
-        this.getAds();
+      cohortValue().then((cohortID) => {
+        this.setState({ token: token, cohort: cohortID }, () => {
+          this.getAdTypes();
+          this.getAds();
+        });
       });
     }
   }
@@ -83,10 +85,25 @@ export default class Dashboard extends Component {
   }
 
   getAds = () => {
-    // TODO: Set adChoice based on Simhash
-    let adChoice = 0;
-
     axios.post('http://localhost:2000/get-ad-commitments', {}).then((res) => {
+      let adHashes = res.data.adHash;
+
+      let similarity = [];
+      for(let i = 0; i < adHashes.length; i++) {
+        let adHash = JSON.parse(adHashes[i]);
+        similarity.push({
+          index: i,
+          value: dot(adHash, this.state.cohort)
+        });
+      }
+
+      similarity.sort(function(a, b) {
+        return b.value - a.value;
+      });
+      console.log(similarity);
+      console.log(adHashes[similarity[0].index]);
+
+      let adChoice = similarity[0].index;
       let x = bigInt(res.data.x[adChoice]);
 
       let randomValue = crypto.randomBytes(64);
@@ -147,6 +164,14 @@ export default class Dashboard extends Component {
     // this.setState({ loading: false, searchDisplay: true, searchResults: srcResults });
   }
 
+  updateCohort = (item) => {
+    updateCohortValue(item).then((cohortID) => {
+      this.setState({ cohort: cohortID });
+      console.log("simhash:", JSON.stringify(cohortID));
+      this.getAds();
+    });
+  }
+
   render() {
     return (
       <Container>
@@ -184,13 +209,13 @@ export default class Dashboard extends Component {
                 <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
                   { this.state.searchResults.map((item) => 
                       <>
-                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} href={item.link} key={item.link+Math.random()} onClick={updateCohortValue(item)}>
+                        <button style={{ textDecoration: 'none', backgroundColor: 'white', width: '100%', border: 'none' }} key={item.link+Math.random()} onClick={(e) => this.updateCohort(item)}>
                           <ListItem alignItems="flx-start" key={item.title}>
                             <ListItemText key={item.snippet+Math.random()}
                               primary={(item.title.split("-").length > 1) ? item.title.split("-")[1] : item.title.split("-")[0]}
                               secondary={
                                 <React.Fragment key={item.link+Math.random()}>
-                                  <Link to={item.link}><Typography key={item.link+Math.random()} sx={{ display: 'inline' }} component="span" variant="body2" color="text.primary" >{item.link}</Typography></Link>
+                                  <Link><Typography key={item.link+Math.random()} sx={{ display: 'inline' }} component="span" variant="body2" color="text.primary" >{item.link}</Typography></Link>
                                   <br />{item.snippet}
                                 </React.Fragment>
                               }

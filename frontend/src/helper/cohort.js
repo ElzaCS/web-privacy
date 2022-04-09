@@ -1,5 +1,4 @@
 import Dexie from 'dexie'
-import { globalCohort } from './global';
 var simhash = require('simhash')('');
 
 /* connect to indexedDB */
@@ -30,7 +29,7 @@ async function cohortValue(){
                 /* get tags for cohortID calculation */
                 tagsToCohort.push(tag)
               }
-            }  
+            }
             /* cohortID calculation */
             return simhash(tagsToCohort);
         })
@@ -51,8 +50,7 @@ async function cohortValue(){
     // let finaldata = await db.history_store.toArray();
     // console.log("initialized data:", finaldata)
 
-    globalCohort.push(cohortID);
-    console.log("simhash:", JSON.stringify(globalCohort[0]));
+    console.log("simhash:", JSON.stringify(cohortID));
     return cohortID;
 }
 
@@ -67,7 +65,7 @@ async function updateCohortValue(searchData){
     //console.log("searchData :", searchData);
     let newSearches;
 
-    console.log("Updating cohort value", globalCohort.prop)
+    console.log("Updating cohort value")
     /* add new searches to searchHistory in indexedDB */
     if (searchData.tag.length === 1){
       newSearches = { name: searchData.title, desc: searchData.snippet, tag: searchData.tag[0] }
@@ -91,14 +89,16 @@ async function updateCohortValue(searchData){
     const allTags = await db.history_store.orderBy('tag').keys();  
     console.log("Alltags:" , allTags.length)
     console.log("updated simhash:", JSON.stringify(simhash(allTags)))
-    
-    globalCohort[0]=simhash(allTags);
-    
-    console.log("simhash:", JSON.stringify(globalCohort[0]));
+        
     return simhash(allTags); 
+}
+
+function dot(a, b) {
+  return a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
 }
 
 export {
   cohortValue,
-  updateCohortValue
+  updateCohortValue,
+  dot
 }
