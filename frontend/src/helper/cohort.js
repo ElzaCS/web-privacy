@@ -51,9 +51,8 @@ async function cohortValue(){
     // let finaldata = await db.history_store.toArray();
     // console.log("initialized data:", finaldata)
 
-    globalCohort.prop = cohortID;
-    Object.freeze(globalCohort)
-    console.log("simhash:", JSON.stringify(globalCohort.prop));
+    globalCohort.push(cohortID);
+    console.log("simhash:", JSON.stringify(globalCohort[0]));
     return cohortID;
 }
 
@@ -68,7 +67,7 @@ async function updateCohortValue(searchData){
     //console.log("searchData :", searchData);
     let newSearches;
 
-    console.log("Updaying cohort value", globalCohort)
+    console.log("Updating cohort value", globalCohort.prop)
     /* add new searches to searchHistory in indexedDB */
     if (searchData.tag.length === 1){
       newSearches = { name: searchData.title, desc: searchData.snippet, tag: searchData.tag[0] }
@@ -93,9 +92,9 @@ async function updateCohortValue(searchData){
     console.log("Alltags:" , allTags.length)
     console.log("updated simhash:", JSON.stringify(simhash(allTags)))
     
-    globalCohort.prop = simhash(allTags);
-    Object.freeze(globalCohort);
-    console.log("simhash:", JSON.stringify(globalCohort.prop));
+    globalCohort[0]=simhash(allTags);
+    
+    console.log("simhash:", JSON.stringify(globalCohort[0]));
     return simhash(allTags); 
 }
 

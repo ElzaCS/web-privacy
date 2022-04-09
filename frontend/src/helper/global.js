@@ -1,3 +1,3 @@
-var globalCohort = {};
+var globalCohort = [];
 export {globalCohort}
   

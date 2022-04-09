@@ -92,7 +92,7 @@ app.post("/login", (req, res) => {
           let v = bigInt(data.verifier);
 
           let b = bigInt("7"); //random b
-          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.N); // B = g^b mod N + kv mod N
+          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.SRP.N); // B = g^b mod N + kv mod N
           
           let H = crypto.createHash('sha256');
           H.update(A.toString() + B.toString());
@@ -155,7 +155,7 @@ app.post("/authenticate", (req, res) => {
           let b = data.b;
           let s = data.salt;
           let K = data.K;
-          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.N); // B = g*b mod N + k.v mod N
+          let B = parameters.SRP.g.modPow(b, parameters.SRP.N).add(parameters.SRP.k.multiply(v)).mod(parameters.SRP.N); // B = g*b mod N + k.v mod N
 
           let H = crypto.createHash('sha256');
           H.update(parameters.SRP.N.toString());
