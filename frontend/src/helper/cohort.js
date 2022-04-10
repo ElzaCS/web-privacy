@@ -18,7 +18,8 @@ async function cohortValue(){
             var tagsToCohort = [];
             const lines = responseText.split('\n');
             
-            for(let i=1; i<lines.length; i++){
+            let i = 1;
+            // for(let i=1; i<lines.length; i++){
               const values = lines[i].split(",");         
               let tag = values[1];
 
@@ -29,7 +30,7 @@ async function cohortValue(){
                 /* get tags for cohortID calculation */
                 tagsToCohort.push(tag)
               }
-            }
+            // }
             /* cohortID calculation */
             return simhash(tagsToCohort);
         })

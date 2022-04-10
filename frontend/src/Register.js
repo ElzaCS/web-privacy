@@ -28,7 +28,7 @@ export default class Register extends React.Component {
     let x = bigInt(`${H.digest().toString('hex')}`, 16);
 
     // create verifier v = g^x
-    let v = parameters.g.modPow(x, parameters.N);
+    let v = parameters.SRP.g.modPow(x, parameters.SRP.cN);
     console.log("f: username=", this.state.username, ", s=", salt.toString, ", v=", v.toString)
 
     axios.post('http://localhost:2000/register', {

@@ -24,21 +24,9 @@ export default class Dashboard extends Component {
     super();
     this.state = {
       token: '',
-      // openProductModal: false,
-      // openProductEditModal: false,
-      // id: '',
-      // name: '',
-      // desc: '',
-      // price: '',
-      // discount: '',
-      // file: '',
-      // fileName: '',
-      // page: 1,
       search: '',
-      // products: [],
       adTypes: [],
       searchTags: [],
-      // pages: 0,
       loading: false,
       searchDisplay: false,
       searchResults: [],
@@ -87,6 +75,7 @@ export default class Dashboard extends Component {
   }
 
   getAds = () => {
+    console.time('getAds');
     axios.post('http://localhost:2000/get-ad-commitments', {}).then((res) => {
       let adHashes = res.data.adHash;
 
@@ -137,9 +126,11 @@ export default class Dashboard extends Component {
         type: "error"
       });
     });
+    console.timeEnd('getAds');
   }
 
   getSearchResults = () => {
+    console.time('getSearchResults');
     this.setState({ loading: true });
     let API_KEY = "AIzaSyB3CG76HG9E63Z2SPwWag8UmRWGd9QVWw4";
     let CX = "b2db8f1415b4d3975";
@@ -165,13 +156,16 @@ export default class Dashboard extends Component {
         this.setState({ loading: false, products: [], pages: 0 },()=>{});
       });
     // this.setState({ loading: false, searchDisplay: true, searchResults: srcResults });
+    console.timeEnd('getSearchResults');
   }
 
   updateCohort = (item) => {
+    console.time('Update-cohorts-Fetch-ads');
     updateCohortValue(item).then((cohortID) => {
       this.setState({ cohort: cohortID });
       console.log("simhash:", JSON.stringify(cohortID));
       this.getAds();
+      console.timeEnd('Update-cohorts-Fetch-ads');
     });
   }
 
