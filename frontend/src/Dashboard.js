@@ -42,6 +42,8 @@ export default class Dashboard extends Component {
       loading: false,
       searchDisplay: false,
       searchResults: [],
+      adDisplay: false,
+      adResults: [],
       cohort: [],
       csvData: [
         ["firstname", "lastname", "email"],
@@ -117,6 +119,7 @@ export default class Dashboard extends Component {
       }).then((res) => {
         let m = bigInt(res.data.m[adChoice]).subtract(k).toString(16);
         let message = JSON.parse(Buffer.from(m, 'hex').toString());
+        this.setState({ adDisplay: true, adResults: message });
         console.log(message);
       }).catch((err) => {
         console.log(err)
@@ -200,8 +203,13 @@ export default class Dashboard extends Component {
             </div>
 
           <Divider /><br />
-          {this.state.searchDisplay && 
-              <Item key="ad">Ads</Item>
+          {this.state.adDisplay && 
+              <Item key="ad">
+                Ad: { this.state.adResults[0].title }
+                <div>
+                  { this.state.adResults[0].notes }
+                </div>
+              </Item>
           }
 
           {this.state.searchDisplay && 
